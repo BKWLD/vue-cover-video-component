@@ -1,0 +1,23 @@
+{
+	"name": "vue-cover-video-component",
+	"version": "0.0.1",
+	"description": "Loads and displays video as background:cover",
+	"main": "index.coffee",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/BKWLD/vue-cover-video-component.git"
+	},
+	"author": "info@bkwld.com",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/BKWLD/vue-cover-video-component/issues"
+	},
+	"homepage": "https://github.com/BKWLD/vue-cover-video-component#readme",
+	"dependencies": {
+		"window-event-mediator": "bkwld/window-event-mediator",
+		"vue-in-viewport-mixin": "bkwld/vue-in-viewport-mixin"
+	}
+}
