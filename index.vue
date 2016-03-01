@@ -20,7 +20,6 @@ A fullscren video player that simulates background-cover for video
 
 <script lang='coffee'>
 win = require 'window-event-mediator'
-
 module.exports =
 
 	components:
@@ -29,7 +28,6 @@ module.exports =
 	mixins: [ require 'vue-in-viewport-mixin' ]
 
 	data: ->
-		isReady: false
 		vid: null
 		class: null
 		aspect: null
@@ -45,20 +43,18 @@ module.exports =
 		poster: defaut: null
 
 
-	beforeCompile: ->
-		@inViewportOnce = false
+	# We want to autopause using in-viewport
+	created: -> @inViewportOnce = false
 
 	ready: ->
-		@isReady = true
 
 		# Init special video handling
-		@initVideo()
+		@initVideo() if @video
 
 		# Listen for resizing
 		win.on 'resize', _.bind(@onResize,@)
 		@onResize()
 		@checkVisible()
-		return
 
 	destroyed: ->
 		# Remove non-Vue listeners
@@ -71,22 +67,19 @@ module.exports =
 			setTimeout @destroyVideo, 600
 		return
 
-	watch:
-		# Pause video if off screen
-		inViewport: ->
-			@checkVisible()
+	# Pause video if off screen
+	watch: inViewport: -> @checkVisible()
 
 	methods:
 		checkVisible: ->
-			return if not @isReady
-			@vid.play() if @inViewport
-			@vid.pause() if not @inViewport
+			if @vid and @$el
+				@vid.play() if @inViewport
+				@vid.pause() if not @inViewport
 
 		# The video has reported it is playable
 		onAspectData: (e) ->
 			@vid.removeEventListener 'loadedmetadata', @onAspectData
 			@captureAspect()
-			return
 
 		# Remove the video
 		destroyVideo: ->
@@ -94,22 +87,22 @@ module.exports =
 			@vid.pause()
 			@vid.src = ''
 			@vid.load()
-			return
 
 		# Capture the aspect ratio
 		captureAspect: (e) ->
 			@aspect = @vid.videoWidth / @vid.videoHeight
 			@onResize()
-			return
 
 		# Center the video in it's container while maintaining aspect ratio
 		onResize: (e) ->
+
 			# If we're mid remove, don't fire
-			if !@$el
-				return
+			return unless @$el
+
 			# Store the orientation
 			ratio = @$el.clientWidth / @$el.clientHeight
 			@landscape = ratio > 1
+
 			# Store how to crop it
 			if @aspect and ratio > @aspect
 				@class = 'trim-vertical'
@@ -124,66 +117,65 @@ module.exports =
 
 		# Init HTML5 video, which may be absent during dev
 		initVideo: ->
+
 			# Wait till it's scrolled into visiblity to load and play
 			if @autoplay == 'scroll'
 				window.addEventListener 'scroll', @onScroll
 				stopLoadWatch = @$watch('visible', (visible) ->
-					if !visible
-						return
+					return unless visible
 					stopLoadWatch()
 					@load()
 					@play()
 					@$watch 'visible', @toggle
-					return
 				)
-				# Start loading (and possibly playing) now
+
+			# Start loading (and possibly playing) now
 			else
 				@load()
-			return
 
 		# Start the video loading.
 		load: ->
+
 			# Make the element
 			@vid = @videoEl
+
 			# Listen for being able to play differntly based on what kinda autoplay
 			if @autoplay == 'now'
 				@vid.addEventListener 'timeupdate', @canPlayVideo
 			else
 				@vid.addEventListener 'canplaythrough', @canPlayVideo
+
 			# Listen for when the aspect ratio can be set
 			@vid.addEventListener 'loadedmetadata', @onAspectData
+
 			# Insert the html via JS when ready to play.  Using the v-html directive to
 			# set the video content was triggering multiple video loads.
 			# loader.load()
 			@$els.video.appendChild @vid
-			return
 
 		# The video is ready for playing.  Doing a timeupdate check because
 		# canplaythrough was firing too early and would pause for a tick in safari.
 		canPlayVideo: (e) ->
+
 			# If autoplaying, make sure it's already advanced before showing
 			if @autoplay == 'now'
-				if @vid.currentTime < 0.2
-					return
+				return if @vid.currentTime < 0.2
 				$(@$els.poster).velocity { opacity: 0 },{ display: 'none', duration: 100 }
-
 				@vid.removeEventListener 'timeupdate', @canPlayVideo
-				# If not autoplaying, trust the canplaythrough
+
+			# If not autoplaying, trust the canplaythrough
 			else
 				@vid.addEventListener 'canplaythrough', @canPlayVideo
+
 			# Recapture the aspect if it failed the first time.  Safari is guilty
 			# of this.
-			if !@aspect
-				@captureAspect()
-			# Hide loader
-			# loader.done()
+			@captureAspect() if !@aspect
+
 			# Show video
 			@playable = true
 
 		# Toggle video playing state
-		toggle: (play) ->
-			@play() if play
-			else @pause()
+		toggle: (play) -> if play then @play() else @pause()
 
 		# Play the video from the beginning
 		restart: ->
@@ -196,8 +188,7 @@ module.exports =
 			@onResize()
 
 		# Pause the video
-		pause: ->
-			@vid.pause()
+		pause: -> @vid.pause()
 
 	computed:
 		# Customize the video HTML tag
