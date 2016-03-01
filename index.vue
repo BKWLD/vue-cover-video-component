@@ -21,60 +21,79 @@ A fullscren video player that simulates background-cover for video
 <script lang='coffee'>
 win = require 'window-event-mediator'
 module.exports =
-
-	components:
-		'media-loader': require 'vue-media-loader-directive'
-
+	components:	'media-loader': require 'vue-media-loader-directive'
 	mixins: [ require 'vue-in-viewport-mixin' ]
 
-	data: ->
-		vid: null
-		class: null
-		aspect: null
-		landscape: null
-		visible: null
-		playable: false
-
+	# Settings
 	props:
 		autoplay: default: 'now'
-		loop: default: true
-		mute: default: true
-		video: defaut: null
-		poster: defaut: null
+		loop:     default: true
+		mute:     default: true
+		video:    defaut: null
+		poster:   defaut: null
 
+	data: ->
+		vid:       null
+		class:     null
+		aspect:    null
+		landscape: null
+		visible:   null
+		playable:  false
 
 	# We want to autopause using in-viewport
 	created: -> @inViewportOnce = false
 
-	ready: ->
+	# Init the video on ready
+	ready: -> @initVideo() if @video
 
-		# Init special video handling
-		@initVideo() if @video
-
-		# Listen for resizing
-		win.on 'resize', _.bind(@onResize,@)
-		@onResize()
-		@checkVisible()
-
-	destroyed: ->
-		# Remove non-Vue listeners
-		win.off 'resize', _.bind(@onResize,@)
-		win.off 'scroll', _.bind(@onScroll,@)
-		# Cancel loading of the video.  Call it with a delay because "destroyed"
-		# gets called immediately when a transition begins and I want to wait
-		# till the transition is done.
-		if @vid
-			setTimeout @destroyVideo, 600
-		return
-
-	# Pause video if off screen
-	watch: inViewport: -> @checkVisible()
+	# Destroy the video and it's listeners when removed
+	destroyed: -> @destroyVideo() if @video
 
 	methods:
-		checkVisible: ->
-			if @vid and @$el
-				@vid.play() if @inViewport
-				@vid.pause() if not @inViewport
+
+		# Init HTML5 video, which may be absent during dev
+		initVideo: ->
+
+			# Wait till it's scrolled into visiblity to load and play
+			if @autoplay == 'scroll'
+				unwatch = @$watch 'inViewport', (visible) ->
+					return unless visible
+					unwatch()
+					@load()
+					@playIfVisible()
+				, immediate: true
+
+			# Start loading (and possibly playing) now
+			else
+				@load()
+				@playIfVisible()
+
+		# Start the video loading
+		load: ->
+
+			# Make the element
+			@vid = @videoEl
+
+			# Listen for resizing
+			win.on 'resize', _.bind(@onResize, @)
+			@onResize()
+
+			# Listen for scrolling
+			@$watch 'inViewport', @playIfVisible
+
+			# Listen for being able to play differntly based on what kinda autoplay
+			if @autoplay == 'now'
+				@vid.addEventListener 'timeupdate', @canPlayVideo
+			else
+				@vid.addEventListener 'canplaythrough', @canPlayVideo
+
+			# Listen for when the aspect ratio can be set
+			@vid.addEventListener 'loadedmetadata', @onAspectData
+
+			# Insert the html via JS when ready to play.  Using the v-html directive to
+			# set the video content was triggering multiple video loads.
+			# loader.load()
+			@$els.video.appendChild @vid
 
 		# The video has reported it is playable
 		onAspectData: (e) ->
@@ -83,6 +102,7 @@ module.exports =
 
 		# Remove the video
 		destroyVideo: ->
+			win.off 'resize', _.bind(@onResize, @)
 			@vid.removeEventListener 'loadedmetadata', @onAspectData
 			@vid.pause()
 			@vid.src = ''
@@ -109,50 +129,6 @@ module.exports =
 			else
 				@class = 'trim-horizontal'
 
-		# Update whether the player is currently visible or not
-		onScroll: (e) ->
-			viewport = document.documentElement.clientHeight
-			pos = @$el.getBoundingClientRect()
-			@visible = pos.top < viewport and pos.bottom > 0
-
-		# Init HTML5 video, which may be absent during dev
-		initVideo: ->
-
-			# Wait till it's scrolled into visiblity to load and play
-			if @autoplay == 'scroll'
-				window.addEventListener 'scroll', @onScroll
-				stopLoadWatch = @$watch('visible', (visible) ->
-					return unless visible
-					stopLoadWatch()
-					@load()
-					@play()
-					@$watch 'visible', @toggle
-				)
-
-			# Start loading (and possibly playing) now
-			else
-				@load()
-
-		# Start the video loading.
-		load: ->
-
-			# Make the element
-			@vid = @videoEl
-
-			# Listen for being able to play differntly based on what kinda autoplay
-			if @autoplay == 'now'
-				@vid.addEventListener 'timeupdate', @canPlayVideo
-			else
-				@vid.addEventListener 'canplaythrough', @canPlayVideo
-
-			# Listen for when the aspect ratio can be set
-			@vid.addEventListener 'loadedmetadata', @onAspectData
-
-			# Insert the html via JS when ready to play.  Using the v-html directive to
-			# set the video content was triggering multiple video loads.
-			# loader.load()
-			@$els.video.appendChild @vid
-
 		# The video is ready for playing.  Doing a timeupdate check because
 		# canplaythrough was firing too early and would pause for a tick in safari.
 		canPlayVideo: (e) ->
@@ -173,6 +149,9 @@ module.exports =
 
 			# Show video
 			@playable = true
+
+		# Play the video if visible
+		playIfVisible: (val) -> @toggle(@inViewport)
 
 		# Toggle video playing state
 		toggle: (play) -> if play then @play() else @pause()
