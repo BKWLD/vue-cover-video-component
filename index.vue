@@ -40,10 +40,9 @@ module.exports =
 
 		# Control the playing of video
 		autoplay:
-			default: 'scroll'
+			default: true
 			validator: (value) -> value in [
-				'scroll' # Play the video whnever it is scrolled into viewport
-				true     # Play immediately, as soon as it is loaded
+				true     # Play as soon as it is loaded
 				false    # Don't autoplay
 			]
 
@@ -51,7 +50,7 @@ module.exports =
 		autopause:
 			default: 'scroll'
 			validator: (value) -> value in [
-				'scroll' # Pause the video whnever it is scrolled out of viewport
+				'scroll' # Toggle playback video whenevr it is scrolled out of viewport
 				false    # Don't do any auto pausing control
 			]
 
@@ -82,7 +81,7 @@ module.exports =
 		# Init HTML5 video, which may be absent during dev
 		initVideo: ->
 			@loadWhenVisible() if @autoload == 'scroll'
-			@load() if @autoload == true or @autoload == true
+			@load() if @autoload == true or @autoplay == true
 
 		# Start loading once the video is in the viewport
 		loadWhenVisible: ->
@@ -107,14 +106,14 @@ module.exports =
 
 			# Trigger autoplaying
 			@play() if @autoplay == true
-			if @autoplay == 'scroll' || @autopause == 'scroll'
+			if @autopause == 'scroll'
 				@$watch 'inViewport', @toggleIfVisible, immediate: true
 
 		# Take video tag HTML string and render DOM element
 		renderVideo: (html) ->
 			$html = $(html)
 			$html.attr 'loop', true if @loop
-			$html.attr 'autoplay', true if @autoplay == 'now'
+			$html.attr 'autoplay', true if @autoplay == true
 			$html.attr 'muted', true if @mute
 			$html.attr 'preload', 'auto'
 			return $html[0]
@@ -169,8 +168,8 @@ module.exports =
 
 		# Play the video if visible
 		toggleIfVisible: (val) ->
-			@play() if @inViewport && @autoplay == 'scroll'
-			@pause() if not @inViewport && @autopause == 'scroll'
+			@play() if @inViewport
+			@pause() if not @inViewport
 
 		# Toggle video playing state
 		toggle: (play) -> if play then @play() else @pause()
