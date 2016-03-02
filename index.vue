@@ -63,6 +63,7 @@ module.exports =
 	data: ->
 		vid:             null   # The video element
 		playable:        false  # Is the video ready to play?
+		playing:         false  # Playing state in easy var
 		videoAspect:     null   # Aspect ratio of the video
 		containerAspect: null   # Orientation of the container
 		class:           null   # Cropping class to apply
@@ -176,12 +177,20 @@ module.exports =
 			@play()
 
 		# Play the video
-		play: ->
-			@vid.play()
-			@onResize()
+		play: -> @playing = true
 
 		# Pause the video
-		pause: -> @vid.pause()
+		pause: -> @playing = false
+
+	watch:
+
+		# Control the video by watching the play state
+		playing: (playing) ->
+			if playing
+				@vid.play()
+				@onResize() # Re-apply, just in case
+			else
+				@vid.pause()
 
 	computed:
 
