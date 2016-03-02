@@ -1,6 +1,6 @@
 {
 	"name": "vue-cover-video-component",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Loads and displays video as background:cover",
 	"main": "index.coffee",
 	"scripts": {
@@ -18,7 +18,6 @@
 	"homepage": "https://github.com/BKWLD/vue-cover-video-component#readme",
 	"dependencies": {
 		"window-event-mediator": "bkwld/window-event-mediator",
-		"vue-in-viewport-mixin": "bkwld/vue-in-viewport-mixin",
-		"webcomponents.js": "^0"
+		"vue-in-viewport-mixin": "bkwld/vue-in-viewport-mixin"
 	}
 }
