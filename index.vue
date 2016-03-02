@@ -11,7 +11,7 @@ A fullscren video player that simulates background-cover for video
 		:media="poster")
 
 	//- Container for the <video> element
-	.video(v-el:video)
+	.video(v-el:video v-if="video")
 
 </template>
 
