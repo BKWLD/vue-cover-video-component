@@ -18,6 +18,7 @@ A fullscren video player that simulates background-cover for video
 <!-- ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– -->
 
 <script lang='coffee'>
+# MutationObserver = require 'exports?MutationObserver!webcomponents.js/MutationObserver'
 win = require 'window-event-mediator'
 module.exports =
 	components:	'media-loader': require 'vue-media-loader-directive'
@@ -97,12 +98,18 @@ module.exports =
 		# because it is set to repload.
 		load: ->
 
+			# Listen for the video to be removed from the DOM
+			@vidObserver = new MutationObserver (a) -> console.log a
+			@vidObserver.observe @$el.parentNode, { childList: true, subtree: true }
+
 			# Create the video element and add listeners
 			return if @vid or !@video # Don't run multiple times
 			@vid = @renderVideo(@video)
 			@vid.addEventListener 'loadedmetadata', @onAspectData
 			@vid.addEventListener 'timeupdate', @canPlay
 			@$els.video.appendChild @vid
+
+
 
 			# Trigger autoplaying
 			@play() if @autoplay == true
@@ -155,12 +162,19 @@ module.exports =
 		# Remove the video
 		destroyVideo: ->
 			win.off 'resize', @onResize
-			if (@vid)
-				@vid.removeEventListener 'loadedmetadata', @onAspectData
-				@vid.removeEventListener 'timeupdate', @canPlay
-				@vid.pause()
-				@vid.src = ''
-				@vid.load()
+			return unless @vid
+			@vid.removeEventListener 'loadedmetadata', @onAspectData
+			@vid.removeEventListener 'timeupdate', @canPlay
+
+		# Watch for the actual video to be removed from the DOM before removing.
+		# The Vue destroyed hook gets called when it's removing it's listeners but
+		# it won't actually be removed from the DOM necesarily yet
+		onVideoRemove: ->
+			console.log arguments
+			@vid.pause()
+			@vid.src = ''
+			@vid.load()
+			@vidObserver.disconnect()
 
 		###
 		# Controlling video API

@@ -18,6 +18,7 @@
 	"homepage": "https://github.com/BKWLD/vue-cover-video-component#readme",
 	"dependencies": {
 		"window-event-mediator": "bkwld/window-event-mediator",
-		"vue-in-viewport-mixin": "bkwld/vue-in-viewport-mixin"
+		"vue-in-viewport-mixin": "bkwld/vue-in-viewport-mixin",
+		"webcomponents.js": "^0"
 	}
 }
