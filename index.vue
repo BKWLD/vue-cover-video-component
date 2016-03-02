@@ -3,7 +3,7 @@ A fullscren video player that simulates background-cover for video
 -->
 
 <template lang='jade'>
-.cover-video(:class='[trim, playable ? "playable" : ""]')
+.cover-video(:class='[trim, playable && trim ? "visible" : ""]')
 
 	//- Poster image loaded dynamically
 	.bkgd(v-el:poster v-if="poster"
@@ -65,7 +65,6 @@ module.exports =
 		playing:         false  # Playing state in easy var
 		videoAspect:     null   # Aspect ratio of the video
 		containerAspect: null   # Orientation of the container
-		class:           null   # Cropping class to apply
 
 	# We want to autopause using in-viewport
 	created: -> @inViewportOnce = false
@@ -205,7 +204,9 @@ module.exports =
 	computed:
 
 		# The aspect ratio of the video as a string
-		trim: ->if @containerAspect > @videoAspect then 'letterbox' else 'pillarbox'
+		trim: ->
+			return unless @videoAspect and @containerAspect
+			return if @containerAspect > @videoAspect then 'letterbox' else 'pillarbox'
 
 </script>
 
@@ -227,7 +228,7 @@ module.exports =
 		right 0
 		opacity 0
 		transition opacity 300ms
-	&.playable .video
+	&.visible .video
 		opacity 1
 
 	video
