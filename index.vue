@@ -80,7 +80,7 @@ module.exports =
 		# Init HTML5 video, which may be absent during dev
 		initVideo: ->
 			@loadWhenVisible() if @autoload == 'scroll'
-			@load() if @autoload == true or @autoplay == true
+			@load() if @autoload == true
 
 		# Start loading once the video is in the viewport
 		loadWhenVisible: ->
