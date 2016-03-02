@@ -81,10 +81,8 @@ module.exports =
 
 		# Init HTML5 video, which may be absent during dev
 		initVideo: ->
-			if @autoload == 'scroll'
-				@loadWhenVisible()
-			else if @autoload || @autoplay
-				@load()
+			@loadWhenVisible() if @autoload == 'scroll'
+			@load() if @autoload == true or @autoload == true
 
 		# Start loading once the video is in the viewport
 		loadWhenVisible: ->
@@ -99,17 +97,22 @@ module.exports =
 		# noticeably in Safari.  The video begins loading when the video is appended
 		# because it is set to repload.
 		load: ->
+
+			# Create the video element and add listeners
+			return if @vid or !@video # Don't run multiple times
 			@vid = @renderVideo(@video)
 			@vid.addEventListener 'loadedmetadata', @onAspectData
 			@vid.addEventListener 'timeupdate', @canPlay
 			@$els.video.appendChild @vid
+
+			# Trigger autoplaying
 			@play() if @autoplay == true
 			if @autoplay == 'scroll' || @autopause == 'scroll'
 				@$watch 'inViewport', @toggleIfVisible, immediate: true
 
 		# Take video tag HTML string and render DOM element
 		renderVideo: (html) ->
-			$html = $(@video)
+			$html = $(html)
 			$html.attr 'loop', true if @loop
 			$html.attr 'autoplay', true if @autoplay == 'now'
 			$html.attr 'muted', true if @mute
@@ -153,11 +156,12 @@ module.exports =
 		# Remove the video
 		destroyVideo: ->
 			win.off 'resize', @onResize
-			@vid.removeEventListener 'loadedmetadata', @onAspectData
-			@vid.removeEventListener 'timeupdate', @canPlay
-			@vid.pause()
-			@vid.src = ''
-			@vid.load()
+			if (@vid)
+				@vid.removeEventListener 'loadedmetadata', @onAspectData
+				@vid.removeEventListener 'timeupdate', @canPlay
+				@vid.pause()
+				@vid.src = ''
+				@vid.load()
 
 		###
 		# Controlling video API
@@ -186,6 +190,7 @@ module.exports =
 
 		# Control the video by watching the play state
 		playing: (playing) ->
+			return unless @vid
 			if playing
 				@vid.play()
 				@onResize() # Re-apply, just in case
