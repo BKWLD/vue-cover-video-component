@@ -162,7 +162,7 @@ module.exports =
 		# Unload a video once it is no longer in the DOM. This is needed beceause
 		# the Vue `destroyed` hook fires before the video is actually removed.
 		unloadVideo: ->
-			return setTimeout @unloadVideo, 50 if document.contains @vid
+			return setTimeout @unloadVideo, 50 if document.body.contains @vid
 			@vid.pause()
 			@vid.src = ''
 			@vid.load()
