@@ -82,11 +82,13 @@ module.exports =
 			@loadWhenVisible() if @autoload == 'scroll'
 			@load() if @autoload == true
 
-		# Start loading once the video is in the viewport
+		# Start loading once the video is in the viewport.  This only needs to run
+		# once, thus the unwatch().  However, if it runs immediately, the unwatch
+		# response from watch() isn't ready in time, thus the defer.
 		loadWhenVisible: ->
 			unwatch = @$watch 'inViewport', (visible) ->
 				return unless visible
-				unwatch()
+				if unwatch then unwatch() else _.defer -> unwatch()
 				@load()
 			, immediate: true
 
