@@ -3,7 +3,11 @@ A fullscren video player that simulates background-cover for video
 -->
 
 <template lang='jade'>
+
 .cover-video(:class='[trim, playable && trim ? "visible" : ""]')
+
+	//- Allow markup to be prended
+	slot(name='prepend')
 
 	//- Poster image loaded dynamically
 	.bkgd(v-el:poster v-if="poster"
@@ -12,6 +16,9 @@ A fullscren video player that simulates background-cover for video
 
 	//- Container for the <video> element
 	.video(v-el:video v-if="video")
+
+	//- Allow markup to be appended
+	slot
 
 </template>
 
