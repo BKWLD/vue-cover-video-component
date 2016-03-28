@@ -15,7 +15,7 @@ A fullscren video player that simulates background-cover for video
 		:media="poster")
 
 	//- Container for the <video> element
-	.video(v-el:video v-if="video")
+	.video(v-el:video v-if="shouldLoadVideo")
 
 	//- Allow markup to be appended
 	slot
@@ -61,6 +61,14 @@ module.exports =
 				false    # Don't do any auto pausing control
 			]
 
+		# Don't create video tag on non-autoplaying devices
+		requireAutoplay:
+			default: true
+			validator: (value) -> value in [
+				true     # If a device can't autoplay vidoes, don't create video tag
+				false    # Create video tag even if device can't autoplay
+			]
+
 		# Simple HTML5 video properties
 		loop:      default: true
 		mute:      default: true
@@ -77,10 +85,10 @@ module.exports =
 	created: -> @inViewportOnce = false
 
 	# Init the video on ready
-	ready: -> @initVideo() if @video
+	ready: -> @initVideo() if @shouldLoadVideo
 
 	# Destroy the video and it's listeners when removed
-	destroyed: -> @destroyVideo() if @video
+	destroyed: -> @destroyVideo() if @shouldLoadVideo
 
 	methods:
 
@@ -216,6 +224,12 @@ module.exports =
 		trim: ->
 			return unless @videoAspect and @containerAspect
 			return if @containerAspect > @videoAspect then 'letterbox' else 'pillarbox'
+
+		# Boolean for whether a video should be loaded
+		shouldLoadVideo: -> @video and (not @requireAutoplay or @supportsAutoplay)
+
+		# Test whether the device supports autoplay
+		supportsAutoplay: -> !navigator.userAgent.match /Mobile|Android|BlackBerry/i
 
 </script>
 
