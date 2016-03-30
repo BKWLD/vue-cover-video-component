@@ -10,9 +10,9 @@ A fullscren video player that simulates background-cover for video
 	slot(name='prepend')
 
 	//- Poster image loaded dynamically
-	.bkgd(v-el:poster v-if="poster"
-		v-media-loader
-		:media="poster")
+	.bkgd(v-if="poster"
+		v-el:poster
+		v-media-loader="poster")
 
 	//- Container for the <video> element
 	.video(v-el:video v-if="shouldLoadVideo")
