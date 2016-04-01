@@ -61,6 +61,14 @@ module.exports =
 				false    # Don't do any auto pausing control
 			]
 
+		# Video will only play when entirely visible
+		entirelyvisible:
+			default: false
+			validator: (value) -> value in [
+				true     # Play only when the entire video is visible
+				false    # Don't autoplay
+			]
+
 		# Don't create video tag on non-autoplaying devices
 		requireAutoplay:
 			default: true
@@ -85,7 +93,11 @@ module.exports =
 	created: -> @inViewportOnce = false
 
 	# Init the video on ready
-	ready: -> @initVideo() if @shouldLoadVideo
+	ready: ->
+		# Video should not play until the cover is fully visible
+		@autoplay = false if @entirelyvisible
+
+		@initVideo() if @shouldLoadVideo
 
 	# Destroy the video and it's listeners when removed
 	destroyed: -> @destroyVideo() if @shouldLoadVideo
@@ -121,9 +133,10 @@ module.exports =
 			@$els.video.appendChild @vid
 
 			# Trigger autoplaying
-			@play() if @autoplay == true
+			@play() if @autoplay == true and not @entirelyvisible
 			if @autopause == 'scroll'
-				@$watch 'inViewport', @toggleIfVisible, immediate: true
+				@$watch 'inViewport', @toggleIfVisible, immediate: true if not @entirelyvisible
+				@$watch 'inViewportEntirely', @toggleIfEntirelyVisible, immediate: true if @entirelyvisible
 
 		# Take video tag HTML string and render DOM element
 		renderVideo: (html) ->
@@ -192,6 +205,11 @@ module.exports =
 		toggleIfVisible: (val) ->
 			@play() if @inViewport
 			@pause() if not @inViewport
+
+		# Play the video if visible
+		toggleIfEntirelyVisible: (val) ->
+			@play() if @inViewportEntirely
+			@pause() if not @inViewportEntirely
 
 		# Toggle video playing state
 		toggle: (play) -> if play then @play() else @pause()
