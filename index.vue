@@ -57,7 +57,7 @@ module.exports =
 		autopause:
 			default: 'scroll'
 			validator: (value) -> value in [
-				'scroll' # Toggle playback video whenevr it is scrolled out of viewport
+				'scroll' # Toggle playback video whenever it is scrolled out of viewport
 				false    # Don't do any auto pausing control
 			]
 
