@@ -38,11 +38,12 @@ module.exports =
 
 		# Control the loading of video
 		autoload:
-			default: 'scroll'
+			default: 'visible'
 			validator: (value) -> value in [
-				'scroll' # Load the video when it is scrolled into viewport
-				true     # Load the video immediately
-				false    # Don't autoload
+				'visible'  # Load the video when it is scrolled into viewport
+				'revealed' # Load the video when entirely scrolled into viewport
+				true       # Load the video immediately
+				false      # Don't autoload
 			]
 
 		# Control the playing of video
@@ -55,18 +56,11 @@ module.exports =
 
 		# Control the pausing of video
 		autopause:
-			default: 'scroll'
+			default: 'visible'
 			validator: (value) -> value in [
-				'scroll' # Toggle playback video whenever it is scrolled out of viewport
-				false    # Don't do any auto pausing control
-			]
-
-		# Video will only play when entirely visible
-		entirelyvisible:
-			default: false
-			validator: (value) -> value in [
-				true     # Play only when the entire video is visible
-				false    # Don't autoplay
+				'visible'  # Toggle playback whenever it is scrolled out of viewport
+				'revealed' # Toggle playback when video is no  longer fully in viewport
+				false      # Don't do any auto pausing control
 			]
 
 		# Don't create video tag on non-autoplaying devices
@@ -93,11 +87,7 @@ module.exports =
 	created: -> @inViewportOnce = false
 
 	# Init the video on ready
-	ready: ->
-		# Video should not play until the cover is fully visible
-		@autoplay = false if @entirelyvisible
-
-		@initVideo() if @shouldLoadVideo
+	ready: -> @initVideo() if @shouldLoadVideo
 
 	# Destroy the video and it's listeners when removed
 	destroyed: -> @destroyVideo() if @shouldLoadVideo
@@ -106,14 +96,14 @@ module.exports =
 
 		# Init HTML5 video, which may be absent during dev
 		initVideo: ->
-			@loadWhenVisible() if @autoload == 'scroll'
+			@loadWhenVisible() if @inViewportProp('autoload')
 			@load() if @autoload == true
 
 		# Start loading once the video is in the viewport.  This only needs to run
 		# once, thus the unwatch().  However, if it runs immediately, the unwatch
 		# response from watch() isn't ready in time, thus the defer.
 		loadWhenVisible: ->
-			unwatch = @$watch 'inViewport', (visible) ->
+			unwatch = @$watch @inViewportProp('autoload'), (visible) ->
 				return unless visible
 				if unwatch then unwatch() else _.defer -> unwatch()
 				@load()
@@ -133,10 +123,9 @@ module.exports =
 			@$els.video.appendChild @vid
 
 			# Trigger autoplaying
-			@play() if @autoplay == true and not @entirelyvisible
-			if @autopause == 'scroll'
-				@$watch 'inViewport', @toggleIfVisible, immediate: true if not @entirelyvisible
-				@$watch 'inViewportEntirely', @toggleIfEntirelyVisible, immediate: true if @entirelyvisible
+			@play() if @autoplay == true
+			if prop = @inViewportProp('autopause')
+				@$watch prop, @toggleOnViewport, immediate: true
 
 		# Take video tag HTML string and render DOM element
 		renderVideo: (html) ->
@@ -202,14 +191,7 @@ module.exports =
 		###
 
 		# Play the video if visible
-		toggleIfVisible: (val) ->
-			@play() if @inViewport
-			@pause() if not @inViewport
-
-		# Play the video if visible
-		toggleIfEntirelyVisible: (val) ->
-			@play() if @inViewportEntirely
-			@pause() if not @inViewportEntirely
+		toggleOnViewport: (isIn) -> if isIn then @play() else @pause()
 
 		# Toggle video playing state
 		toggle: (play) -> if play then @play() else @pause()
@@ -224,6 +206,11 @@ module.exports =
 
 		# Pause the video
 		pause: -> @playing = false
+
+		# Get the in-viewport prop given a cover-video prop key
+		inViewportProp: (prop) -> switch @[prop]
+			when 'visible' then 'inViewport'
+			when 'revealed' then 'inViewportEntirely'
 
 	watch:
 
