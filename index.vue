@@ -42,6 +42,7 @@ module.exports =
 			validator: (value) -> value in [
 				'visible'  # Load the video when it is scrolled into viewport
 				'revealed' # Load the video when entirely scrolled into viewport
+				'hover'    # Load the video on mouseover
 				true       # Load the video immediately
 				false      # Don't autoload
 			]
@@ -59,7 +60,8 @@ module.exports =
 			default: 'visible'
 			validator: (value) -> value in [
 				'visible'  # Toggle playback whenever it is scrolled out of viewport
-				'revealed' # Toggle playback when video is no  longer fully in viewport
+				'revealed' # Toggle playback when video is no longer fully in viewport
+				'hover'    # Pause on mouseout
 				false      # Don't do any auto pausing control
 			]
 
@@ -70,6 +72,9 @@ module.exports =
 				true     # If a device can't autoplay vidoes, don't create video tag
 				false    # Create video tag even if device can't autoplay
 			]
+
+		# Pass in the element who dispatches the mouse events for hovering
+		hoverDispatcher: default: null
 
 		# Simple HTML5 video properties
 		loop:      default: true
@@ -82,22 +87,40 @@ module.exports =
 		playing:         false  # Playing state in easy var
 		videoAspect:     null   # Aspect ratio of the video
 		containerAspect: null   # Orientation of the container
+		mouseover:       null   # Currently in a hovered state
 
 	# We want to autopause using in-viewport
 	created: -> @inViewportOnce = false
 
 	# Init the video on ready
-	ready: -> @initVideo() if @shouldLoadVideo
+	ready: ->
+		@addHoverListeners() if 'hover' in [@autoload, @autopause]
+		@initVideo() if @shouldLoadVideo
 
 	# Destroy the video and it's listeners when removed
-	destroyed: -> @destroyVideo() if @shouldLoadVideo
+	destroyed: ->
+		@removeHoverListeners() if 'hover' in [@autoload, @autopause]
+		@destroyVideo() if @shouldLoadVideo
 
 	methods:
 
-		# Init HTML5 video, which may be absent during dev
+		# Add hover listeners
+		addHoverListeners: ->
+			@mouseover = false
+			dispatcher = @hoverDispatcher ? @$el
+			dispatcher.addEventListener 'mouseenter', @onMouseenter
+			dispatcher.addEventListener 'mouseleave', @onMouseleave
+
+		# Init HTML5 video
 		initVideo: ->
-			@loadWhenVisible() if @inViewportProp('autoload')
-			@load() if @autoload == true
+			if @inViewportProp('autoload')
+				@loadWhenVisible()
+			else if @autoload == true
+				@load()
+
+		###
+		# Triggers
+		###
 
 		# Start loading once the video is in the viewport.  This only needs to run
 		# once, thus the unwatch().  However, if it runs immediately, the unwatch
@@ -108,6 +131,16 @@ module.exports =
 				if unwatch then unwatch() else _.defer -> unwatch()
 				@load()
 			, immediate: true
+
+		# Triggering loading / playing on mouseover
+		onMouseenter: -> @mouseover = true
+
+		# Triggering pausing on mouseout
+		onMouseleave: -> @mouseover = false
+
+		###
+		# Loading
+		###
 
 		# Start the video loading.  Watching for it via `timeupdate` because it
 		# reports playback earlier and more dependably than `canplaythrough`,
@@ -126,6 +159,8 @@ module.exports =
 			@play() if @autoplay == true
 			if prop = @inViewportProp('autopause')
 				@$watch prop, @toggleOnViewport, immediate: true
+			else if @autopause == 'hover'
+				@play() if @mouseover
 
 		# Take video tag HTML string and render DOM element
 		renderVideo: (html) ->
@@ -155,6 +190,10 @@ module.exports =
 			# Shows the video
 			@playable = true
 
+		###
+		# Cover layout
+		###
+
 		# The video has reported it is playable
 		onAspectData: (e) ->
 			@vid.removeEventListener 'loadedmetadata', @onAspectData
@@ -169,6 +208,16 @@ module.exports =
 		onResize: (e) ->
 			return unless @$el
 			@containerAspect = @$el.clientWidth / @$el.clientHeight
+
+		###
+		# Cleanup
+		###
+
+		# Remove hover listeners
+		removeHoverListeners: ->
+			dispatcher = @hoverDispatcher ? @$el
+			dispatcher.removeEventListener 'mouseenter', @onMouseenter
+			dispatcher.removeEventListener 'mouseleave', @onMouseleave
 
 		# Remove the video
 		destroyVideo: ->
@@ -222,6 +271,14 @@ module.exports =
 				@onResize() # Re-apply, just in case
 			else
 				@vid.pause()
+
+		# Toggle loading / playback based on hover
+		mouseover: (hovered) ->
+			if hovered
+				@load() if @autoload == 'hover'
+				@play() if @autopause == 'hover'
+			else
+				@pause() if @autopause == 'hover'
 
 	computed:
 
