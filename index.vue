@@ -10,12 +10,19 @@ A fullscren video player that simulates background-cover for video
 	slot(name='prepend')
 
 	//- Poster image loaded dynamically
-	.bkgd(v-if="poster"
-		v-el:poster
-		v-media-loader="poster")
+	.bkgd(v-el:poster
+		v-if="posterSrc"
+		v-media-loader="posterSrc")
 
 	//- Container for the <video> element
-	.video(v-el:video v-if="shouldLoadVideo")
+	.video(v-el:video
+		v-if="shouldLoadVideo")
+
+	//- Fallback image if device doesn't support video and the fallback isn't
+	//- being used for the poster
+	.fallback(v-el:fallback
+		v-if="fallbackSrc"
+		v-media-loader="fallbackSrc")
 
 	//- Allow markup to be appended
 	slot
@@ -33,8 +40,10 @@ module.exports =
 	# Settings
 	props:
 
-		# Video HTML string
-		video: default: null
+		# Media srcs
+		video:    default: null # Video HTML string
+		poster:   defaut: null  # Poster image src string
+		fallback: defaut: null  # Fallback for devices that don't support videos
 
 		# Control the loading of video
 		autoload:
@@ -79,7 +88,6 @@ module.exports =
 		# Simple HTML5 video properties
 		loop:      default: true
 		mute:      default: true
-		poster:    defaut: null
 
 	data: ->
 		vid:             null   # The video element
@@ -293,6 +301,26 @@ module.exports =
 		# Test whether the device supports autoplay
 		supportsAutoplay: -> !navigator.userAgent.match /Mobile|Android|BlackBerry/i
 
+		# If the fallback is not a gif, don't use a poster.  The rationale is that
+		# the fallback is about the same file weight in that case as the poster,
+		# so there is no reason to load both.  If it is gif, the fallback is
+		# heavier, so load something in the meantime.
+		posterSrc: ->
+			return @poster if @shouldLoadVideo
+			if @fallbackIsGif then @poster else @fallback
+
+		# Only load a fallback image if it is a gif (see above) and a video won't
+		# be loaded.
+		fallbackSrc: -> @fallback if @fallbackIsGif and not @shouldLoadVideo
+
+		# Check if the fallback image is a gif. Both string and Decoy image object
+		# syntaxes are supported.
+		fallbackIsGif: ->
+			return false unless @fallback
+			src = if _.isString @fallback then @fallback else @fallback.l
+			return false unless src
+			return !!src.match /\.gif$/i
+
 </script>
 
 <!-- ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -305,7 +333,10 @@ module.exports =
 	bottom 0
 	right 0
 
-	.video
+	.fallback
+		background-size cover
+
+	.video, .fallback
 		position absolute
 		top 0
 		left 0
@@ -313,7 +344,7 @@ module.exports =
 		right 0
 		opacity 0
 		transition opacity 300ms
-	&.visible .video
+	&.visible .video, &.visible .fallback
 		opacity 1
 
 	video
