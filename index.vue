@@ -21,7 +21,7 @@ A fullscren video player that simulates background-cover for video
 	//- Fallback image if device doesn't support video and the fallback isn't
 	//- being used for the poster
 	.fallback(v-el:fallback
-		v-if="fallbackSrc"
+		v-if="fallbackSrc && requestFallback"
 		v-media-loader="fallbackSrc")
 
 	//- Allow markup to be appended
@@ -96,6 +96,7 @@ module.exports =
 		videoAspect:     null   # Aspect ratio of the video
 		containerAspect: null   # Orientation of the container
 		mouseover:       null   # Currently in a hovered state
+		requestFallback: false  # Used to trigger the loading of fallback
 
 	# We want to autopause using in-viewport
 	created: -> @inViewportOnce = false
@@ -103,7 +104,7 @@ module.exports =
 	# Init the video on ready
 	ready: ->
 		@addHoverListeners() if 'hover' in [@autoload, @autopause]
-		@initVideo() if @shouldLoadVideo
+		if @inViewportProp('autoload') then @loadWhenVisible() else @load()
 
 	# Destroy the video and it's listeners when removed
 	destroyed: ->
@@ -118,13 +119,6 @@ module.exports =
 			dispatcher = @hoverDispatcher ? @$el
 			dispatcher.addEventListener 'mouseenter', @onMouseenter
 			dispatcher.addEventListener 'mouseleave', @onMouseleave
-
-		# Init HTML5 video
-		initVideo: ->
-			if @inViewportProp('autoload')
-				@loadWhenVisible()
-			else if @autoload == true
-				@load()
 
 		###
 		# Triggers
@@ -150,11 +144,14 @@ module.exports =
 		# Loading
 		###
 
+		# Generic load method that loads video or fallback
+		load: -> if @shouldLoadVideo then @loadVideo() else @loadFallback()
+
 		# Start the video loading.  Watching for it via `timeupdate` because it
 		# reports playback earlier and more dependably than `canplaythrough`,
 		# noticeably in Safari.  The video begins loading when the video is appended
 		# because it is set to repload.
-		load: ->
+		loadVideo: ->
 
 			# Create the video element and add listeners
 			return if @vid or !@video # Don't run multiple times
@@ -197,6 +194,9 @@ module.exports =
 
 			# Shows the video
 			@playable = true
+
+		# Load the fallback image
+		loadFallback: -> @requestFallback = true
 
 		###
 		# Cover layout
@@ -344,7 +344,7 @@ module.exports =
 		right 0
 		opacity 0
 		transition opacity 300ms
-	&.visible .video, &.visible .fallback
+	&.visible .video, .fallback.media-loaded
 		opacity 1
 
 	video
