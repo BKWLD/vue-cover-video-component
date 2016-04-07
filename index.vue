@@ -295,8 +295,9 @@ module.exports =
 			return unless @videoAspect and @containerAspect
 			return if @containerAspect > @videoAspect then 'letterbox' else 'pillarbox'
 
-		# Boolean for whether a video should be loaded
-		shouldLoadVideo: -> @video and (not @requireAutoplay or @supportsAutoplay)
+		# Only load videos if one was passed in via prop and the device supports
+		# autoplaying or we don't care whether the device can autoplay.
+		shouldLoadVideo: -> !!(@video and (@supportsAutoplay or not @requireAutoplay))
 
 		# Test whether the device supports autoplay
 		supportsAutoplay: -> !navigator.userAgent.match /Mobile|Android|BlackBerry/i
@@ -306,8 +307,9 @@ module.exports =
 		# so there is no reason to load both.  If it is gif, the fallback is
 		# heavier, so load something in the meantime.
 		posterSrc: ->
-			return @poster if @shouldLoadVideo
-			if @fallbackIsGif then @poster else @fallback
+			if @shouldLoadVideo or @fallbackIsGif or not @fabllbackUrl
+			then @poster
+			else @fallback
 
 		# Only load a fallback image if it is a gif (see above) and a video won't
 		# be loaded.
@@ -316,10 +318,13 @@ module.exports =
 		# Check if the fallback image is a gif. Both string and Decoy image object
 		# syntaxes are supported.
 		fallbackIsGif: ->
-			return false unless @fallback
-			src = if _.isString @fallback then @fallback else @fallback.l
-			return false unless src
-			return !!src.match /\.gif$/i
+			return false unless @fabllbackUrl
+			return !!@fabllbackUrl.match /\.gif$/i
+
+		# Get the fallback url, for testing if it's a gif
+		fabllbackUrl: ->
+			return null unless @fallback
+			if _.isString @fallback then @fallback else @fallback.l
 
 </script>
 
