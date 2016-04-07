@@ -302,10 +302,10 @@ module.exports =
 		# Test whether the device supports autoplay
 		supportsAutoplay: -> !navigator.userAgent.match /Mobile|Android|BlackBerry/i
 
-		# If the fallback is not a gif, don't use a poster.  The rationale is that
-		# the fallback is about the same file weight in that case as the poster,
-		# so there is no reason to load both.  If it is gif, the fallback is
-		# heavier, so load something in the meantime.
+		# If the fallback is not a gif, use it instead of poster value. The
+		# rationale is that the fallback is about the same file weight in that case
+		# as the poster, so there is no reason to load both.  If it is gif, the
+		# fallback is heavier, so load something in the meantime.
 		posterSrc: ->
 			if @shouldLoadVideo or @fallbackIsGif or not @fabllbackUrl
 			then @poster
