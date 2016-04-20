@@ -104,7 +104,8 @@ module.exports =
 	# Init the video on ready
 	ready: ->
 		@addHoverListeners() if 'hover' in [@autoload, @autopause]
-		if @inViewportProp('autoload') then @loadWhenVisible() else @load()
+		if @inViewportProp('autoload') then @loadWhenVisible()
+		else if @autoload == true then @load()
 
 	# Destroy the video and it's listeners when removed
 	destroyed: ->
