@@ -2,9 +2,12 @@
   "name": "vue-cover-video-component",
   "version": "0.8.2",
   "description": "Loads and displays video as background:cover",
-  "main": "index.coffee",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node_modules/.bin/webpack && node_modules/.bin/webpack -p",
+    "version": "npm run build && git add -A",
+    "postversion": "git push --follow-tags"
   },
   "repository": {
     "type": "git",
@@ -17,8 +20,25 @@
   },
   "homepage": "https://github.com/BKWLD/vue-cover-video-component#readme",
   "dependencies": {
-    "window-event-mediator": "^0",
+    "lodash": "3 - 4",
     "vue-in-viewport-mixin": "^0",
-    "vue-media-loader-directive": "^0"
+    "vue-media-loader-directive": "^0",
+    "window-event-mediator": "^0"
+  },
+  "peerDependencies": {
+    "vue": "^2"
+  },
+  "devDependencies": {
+    "autoprefixer": "^6.5.3",
+    "coffee-loader": "^0.7.2",
+    "coffee-script": "^1.11.1",
+    "css-loader": "^0.26.0",
+    "postcss-loader": "^1.1.1",
+    "style-loader": "^0.13.1",
+    "stylus": "^0.54.5",
+    "stylus-loader": "^2.3.1",
+    "vue": "^2.0.7",
+    "vue-loader": "^9.9.5",
+    "webpack": "^1.13.3"
   }
 }

@@ -10,18 +10,21 @@ A fullscren video player that simulates background-cover for video
 	slot(name='prepend')
 
 	//- Poster image loaded dynamically
-	.bkgd(v-el:poster
-		v-if="posterSrc"
-		v-media-loader="posterSrc")
+	.bkgd(
+		ref='poster'
+		v-if='posterSrc'
+		v-media-loader='posterSrc')
 
 	//- Container for the <video> element
-	.video(v-el:video
-		v-if="shouldLoadVideo")
+	.video(
+		ref='video'
+		v-if='shouldLoadVideo')
 
 	//- Fallback image if device doesn't support video and the fallback isn't
 	//- being used for the poster
-	.fallback(v-el:fallback
-		v-if="fallbackSrc && requestFallback"
+	.fallback(
+		ref='fallback'
+		v-if='fallbackSrc && requestFallback'
 		v-media-loader="fallbackSrc")
 
 	//- Allow markup to be appended
@@ -33,6 +36,8 @@ A fullscren video player that simulates background-cover for video
 
 <script lang='coffee'>
 win = require 'window-event-mediator'
+defer = require 'lodash/function/defer'
+isString = require 'lodash/lang/isString'
 module.exports =
 	components:	'media-loader': require 'vue-media-loader-directive'
 	mixins: [ require 'vue-in-viewport-mixin' ]
@@ -131,7 +136,7 @@ module.exports =
 		loadWhenVisible: ->
 			unwatch = @$watch @inViewportProp('autoload'), (visible) ->
 				return unless visible
-				if unwatch then unwatch() else _.defer -> unwatch()
+				if unwatch then unwatch() else defer -> unwatch()
 				@load()
 			, immediate: true
 
@@ -325,7 +330,7 @@ module.exports =
 		# Get the fallback url, for testing if it's a gif
 		fabllbackUrl: ->
 			return null unless @fallback
-			if _.isString @fallback then @fallback else @fallback.l
+			if isString @fallback then @fallback else @fallback.l
 
 </script>
 
