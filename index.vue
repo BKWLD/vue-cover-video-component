@@ -41,6 +41,7 @@ module.exports =
 	props:
 
 		# Media srcs
+		guid:     default: null # Reference string for any given instance
 		video:    default: null # Video HTML string
 		poster:   defaut: null  # Poster image src string
 		fallback: defaut: null  # Fallback for devices that don't support videos
@@ -183,6 +184,7 @@ module.exports =
 
 			# If autoplaying, make sure it's already advanced before showing
 			return if @vid.currentTime < 0.2
+
 			@vid.removeEventListener 'timeupdate', @canPlay
 
 			# Listen to resizing to capture
@@ -195,6 +197,13 @@ module.exports =
 
 			# Shows the video
 			@playable = true
+
+			@vid.addEventListener 'timeupdate', @playheadUpdate
+
+		# When a cover video playhead changes, this event is fired with the
+		# video guid, current playback time and duration of the video
+		playheadUpdate: ->
+			@$dispatch 'playheadUpdate', @guid, @vid.currentTime, @vid.duration,
 
 		# Load the fallback image
 		loadFallback: -> @requestFallback = true
@@ -234,6 +243,7 @@ module.exports =
 			return unless @vid
 			@vid.removeEventListener 'loadedmetadata', @onAspectData
 			@vid.removeEventListener 'timeupdate', @canPlay
+			@vid.removeEventListener 'timeupdate', @playheadUpdate
 			@unloadVideo()
 
 		# Unload a video once it is no longer in the DOM. This is needed beceause
