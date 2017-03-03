@@ -250,7 +250,7 @@ module.exports =
 		# the Vue `destroyed` hook fires before the video is actually removed.
 		unloadVideo: ->
 			return setTimeout @unloadVideo, 50 if document.body.contains @vid
-			@vid.pause()
+			@vid.pause() if !@vid.paused 
 			@vid.src = ''
 			@vid.load()
 
@@ -286,10 +286,10 @@ module.exports =
 		playing: (playing) ->
 			return unless @vid
 			if playing
-				@vid.play()
+				@vid.play() if @vid.paused
 				@onResize() # Re-apply, just in case
 			else
-				@vid.pause()
+				@vid.pause() if !@vid.paused
 
 		# Toggle loading / playback based on hover
 		mouseover: (hovered) ->
