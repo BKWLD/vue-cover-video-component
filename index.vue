@@ -172,9 +172,9 @@ module.exports =
 		# Take video tag HTML string and render DOM element
 		renderVideo: (html) ->
 			$html = $(html)
-			$html.attr 'loop', true if @loop
-			$html.attr 'autoplay', true if @autoplay == true
-			$html.attr 'muted', true if @mute
+			$html.prop 'loop', true if @loop
+			$html.prop 'autoplay', true if @autoplay == true
+			$html.prop 'muted', true if @mute
 			$html.attr 'preload', 'auto'
 			return $html[0]
 
