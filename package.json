@@ -1,6 +1,6 @@
 {
   "name": "vue-cover-video-component",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Loads and displays video as background:cover",
   "main": "index.coffee",
   "scripts": {
